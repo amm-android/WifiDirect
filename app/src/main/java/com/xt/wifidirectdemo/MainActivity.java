@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 
 import com.xt.m_common_utils.MConvertUtils;
@@ -19,8 +21,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
-
+public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+    private Button btnSearch;
+    private EditText edtContent;
+    private Button btnSend;
+    private ListView listV;
     private IntentFilter mIntentFilter;
     private P2pBroadcastReceiver mP2pBroadcastReceiver;
     private AWifiP2pCotroller mAWifiP2pCotroller;
@@ -31,24 +36,24 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        findViewById(R.id.btnSearch).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mAWifiP2pCotroller.discoverPeers();
-            }
-        });
-        findViewById(R.id.btnSend).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mAWifiP2pCotroller.write(MConvertUtils.hexString2Bytes("FF"));
-                    }
-                }).start();
-            }
-        });
-        ListView listV = findViewById(R.id.listV);
+        initView();
+        initData();
+        mP2pBroadcastReceiver = new P2pBroadcastReceiver(mAWifiP2pCotroller);
+        mIntentFilter = new IntentFilter();
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+    }
+
+    private void initView() {
+        btnSearch = (Button) findViewById(R.id.btnSearch);
+        btnSearch.setOnClickListener(this);
+        edtContent = (EditText)findViewById(R.id.edtContent);
+        btnSend = (Button)findViewById(R.id.btnSend);
+        btnSend.setOnClickListener(this);
+
+        listV = (ListView)findViewById(R.id.listV);
         mCommonAdapter = new CommonAdapter<WifiP2pDevice>(this, R.layout.item, datas) {
             @Override
             protected void convert(ViewHolder viewHolder, WifiP2pDevice item, int position) {
@@ -80,14 +85,17 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
 
-        WifiP2pManager wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+    private void initData() {
+        WifiP2pManager wifiP2pManager = (WifiP2pManager) this.getSystemService(Context.WIFI_P2P_SERVICE);
         WifiP2pManager.Channel channel = wifiP2pManager.initialize(this, getMainLooper(), new WifiP2pManager.ChannelListener() {
             @Override
             public void onChannelDisconnected() {
 
             }
         });
+
         mAWifiP2pCotroller = new AWifiP2pCotroller(wifiP2pManager, channel) {
             @Override
             protected void onPeers(final Collection<WifiP2pDevice> deviceList) {
@@ -107,15 +115,10 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             protected void onReceiveData(byte[] data) {
-                MToastUtils.showShort(MainActivity.this, MConvertUtils.bytes2HexString(data));
+//                MToastUtils.showShort(MainActivity.this, MConvertUtils.bytes2HexString(data));
+                MToastUtils.showShort(MainActivity.this,new String(data));
             }
         };
-        mP2pBroadcastReceiver = new P2pBroadcastReceiver(mAWifiP2pCotroller);
-        mIntentFilter = new IntentFilter();
-        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
-        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
-        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
-        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
     }
 
     @Override
@@ -123,6 +126,25 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         registerReceiver(mP2pBroadcastReceiver, mIntentFilter);
         mAWifiP2pCotroller.discoverPeers();
+    }
+
+
+    @Override
+    public void onClick(View view) {
+        int id = view.getId();
+        if (id == btnSearch.getId()){
+            mAWifiP2pCotroller.discoverPeers();
+        }else if (id == btnSend.getId()){
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    String text = edtContent.getText().toString();
+//                        String text = "FF";
+//                        mAWifiP2pCotroller.write(MConvertUtils.hexString2Bytes(text));
+                    mAWifiP2pCotroller.write(text.getBytes());
+                }
+            }).start();
+        }
     }
 
     @Override

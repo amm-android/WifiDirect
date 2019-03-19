@@ -4,7 +4,7 @@ android {
     defaultConfig {
         applicationId "com.xt.wifidirectdemo"
         minSdkVersion 19
-        targetSdkVersion 25
+        targetSdkVersion 26
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -25,7 +25,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
-    api 'com.github.zxrmmxt:MCommonUtils:v1.0.9'
+    implementation 'com.github.zxrmmxt:MCommonUtils:v1.0.13'
     implementation 'com.zhy:base-adapter:3.0.3'
-    api 'com.blankj:utilcode:1.17.3'
+    implementation 'com.blankj:utilcode:1.17.3'
 }
